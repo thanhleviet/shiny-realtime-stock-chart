@@ -7,9 +7,10 @@
 
 library(shiny)
 library(highcharter)
+library(lubridate)
 shinyUI(fluidPage(
   # Application title
-  titlePanel("Đồ thị giao dịch cổ phiếu thời gian thực (chỉ update realtime từ 8h30 đến 15h)"),
+  titlePanel("Đồ thị giao dịch cổ phiếu thời gian thực (chỉ update realtime từ 9h đến 15h)"),
   sidebarLayout(fluid = TRUE,
                 sidebarPanel(
                   selectInput("theme", label = "Giao diện đồ thị", width = "100%",
@@ -20,6 +21,7 @@ shinyUI(fluidPage(
                               choices = c("10","20", "30", "40", "50", "100", "all")), width = 3)
                 ,
                 mainPanel(
+                  if (hour(now()))
                   highchartOutput("stockPlot")
                 )
   )

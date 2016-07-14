@@ -29,7 +29,7 @@ checkTime <- function(){
     .m <- .now %>% minute()/60
     return(.h + .m)
   }
-  ato <- 8.5
+  ato <- 9
   atc <- 15.0
   this_time <- this_time()
   return(this_time > ato & this_time < atc)
@@ -103,6 +103,7 @@ shinyServer(function(input, output) {
     invalidateLater(60000)#1 phút vẽ lại một lần
     if (checkTime()) {
       st_dt <- st_dt_update <- getStock(url)
+      sub_title <- paste0("Cập nhật lúc ",now(tzone = "Asia/Ho_Chi_Minh"))
       plotStock(input = input, stock_data = st_dt_update, sub_title = sub_title, n = n)
     }
     else {
