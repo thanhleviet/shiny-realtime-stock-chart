@@ -14,16 +14,17 @@ library(lubridate)
 
 url <- "http://stockboard2.sbsc.com.vn/ChartHandler.ashx?Type=6&Symbol=SHI&callback=jQuery111007833975924922852_1468462142295&_search=false&nd=1468462901871&rows=200&page=1&sidx=&sord=asc&_=1468462142344"
 
+#Hàm lấy dữ liệu giao dịch cổ phiếu
 getStock <- function(url){
   stock_data <- getURL(url,.opts = list(timeout = 10000)) %>% gsub("jQuery111007833975924922852_1468462142295\\(|\\)|;","",.) %>% fromJSON(.)
-  # rs <-  list(records = stock_data$records, rows = stock_data$rows)
   .rs <- stock_data$rows$row %>% arrange(desc(id))
   return(.rs)
 }
 
+#Hàm kiểm tra thời gian giao dịch
 checkTime <- function(){
   this_time <- function(){
-    .now <- now()
+    .now <- now(tzone = "Asia/Ho_Chi_Minh")
     .h <- .now %>% hour()
     .m <- .now %>% minute()/60
     return(.h + .m)
@@ -45,27 +46,28 @@ plotStock <- function(input, stock_data, limit = TRUE, n, sub_title){
   hc <- highchart() %>%
     hc_xAxis(categories = stock_data$time) %>%
     hc_yAxis_multiples(
-      list(title = list(text = "Price"),
+      list(title = list(text = "Giá (x1000 VND)"),
            align = "left",
            showFirstLabel = FALSE,
            showLastLabel = FALSE,
            marker = list(enabled = FALSE)
       ),
-      list(title = list(text = "Khối lượng cổ phiếu"),
+      list(title = list(text = "Khối lượng cổ phiếu (x10)"),
            align = "righ",
            showFirstLabel = FALSE,
            showLastLabel = FALSE,
            opposite = TRUE
       )) %>%
 
-    hc_add_series(name = "SHI Volume", data = stock_data$vol/100, type = "column", yAxis = 1) %>%
-    hc_title(text = "SHI Stock") %>%
+    hc_add_series(name = "Lượng cổ phiếu giao dịch", data = stock_data$vol/100, type = "column", yAxis = 1) %>%
+    hc_title(text = "Cổ phiếu SHI") %>%
     hc_subtitle(text = sub_title, style = list(color = "#2b908f", fontWeight = "bold")) %>%
-    hc_add_series(name = "SHI price", data = stock_data$price, type = "spline")
+    hc_add_series(name = "Giá", data = stock_data$price, type = "spline")
 
   if (input$theme != FALSE) {
     theme <- switch(input$theme,
                     null = hc_theme_null(),
+                    sparkline = hc_theme_sparkline(),
                     darkunica = hc_theme_darkunica(),
                     gridlight = hc_theme_gridlight(),
                     sandsignika = hc_theme_sandsignika(),
@@ -80,10 +82,12 @@ plotStock <- function(input, stock_data, limit = TRUE, n, sub_title){
   }
   hc
 }
+
+
 shinyServer(function(input, output) {
 
   st_dt <- getStock(url)
-  sub_title <- paste0("Updated at ",now())
+  sub_title <- paste0("Cập nhật lúc ",now(tzone = "Asia/Ho_Chi_Minh"))
 
   output$stockPlot <- renderHighchart({
     n <- input$kl
@@ -96,7 +100,7 @@ shinyServer(function(input, output) {
     else{
       n <- as.numeric(n)
     }
-    invalidateLater(60000)
+    invalidateLater(60000)#1 phút vẽ lại một lần
     if (checkTime()) {
       st_dt <- st_dt_update <- getStock(url)
       plotStock(input = input, stock_data = st_dt_update, sub_title = sub_title, n = n)
